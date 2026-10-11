@@ -1,0 +1,14 @@
+{
+  "name": "wiki-capture",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "test": "node --test capture/tests/*.test.js",
+    "add": "node capture/add.js",
+    "setup-xhs": "capture/tools/setup-xhs.sh",
+    "install-worker": "node capture/install.js"
+  }
+}

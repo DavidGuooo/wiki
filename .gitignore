@@ -1,0 +1,10 @@
+.env
+.env.*
+node_modules/
+*.log
+.DS_Store
+vault/.capture-tmp/
+vault/.obsidian/workspace*.json
+vault/.trash/
+vault/raw/
+.tools/
