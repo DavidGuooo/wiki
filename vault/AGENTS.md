@@ -30,7 +30,7 @@ The goal is understanding and remembering, not collecting. Learning happens in t
 
 Image text (GPT-6-Luna) and transcripts (local Qwen ASR) are machine-generated and may contain errors. Say so when it matters.
 
-`notes/<raw-id>.md` is the owner's note on that item; `notes/daily/YYYY-MM-DD.md` holds thoughts that have no source.
+`notes/<raw-id>.md` is the owner's note on that item; `notes/daily/YYYY-MM-DD.md` holds thoughts that have no source; `notes/ideas.md` is a plain bullet list of excerpts and brief ideas (`* idea`), no sources.
 
 The frontmatter is the index; there is no index file. Find things with grep, for example `grep -l "topics: \[.*investing" raw/*/source.md`. Topic lists are bracketed and unquoted (`topics: [agentic-coding, product]`), or a `- item` list after Obsidian edits them.
 

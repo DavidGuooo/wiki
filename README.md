@@ -24,7 +24,7 @@ vault/          Obsidian vault: open this folder in Obsidian
   AGENTS.md     rules + workflows for agents (CLAUDE.md just imports it)
   inbox.md      watch-later queue, newest first; tick the checkbox when done: it moves to the bottom and is deleted once it was captured 30+ days ago
   raw/<date>-<platform>-<id>/source.md + images/   machine-written, never hand-edited
-  notes/<raw-id>.md, notes/daily/YYYY-MM-DD.md     yours
+  notes/<raw-id>.md, notes/daily/YYYY-MM-DD.md, notes/ideas.md   yours (ideas.md: excerpts and brief ideas)
   topics/<name>/{AGENTS.md, questions.md, wiki/, outputs/}
 ```
 
