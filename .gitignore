@@ -3,8 +3,6 @@
 node_modules/
 *.log
 .DS_Store
-vault/.capture-tmp/
-vault/.obsidian/workspace*.json
-vault/.trash/
-vault/raw/
 .tools/
+# The vault lives in iCloud; vault/ is a symlink to it.
+/vault
