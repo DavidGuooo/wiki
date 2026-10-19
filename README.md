@@ -11,7 +11,7 @@ Transcription runs locally on the shared Qwen3-ASR runtime. Network calls: fetch
 ## Layout
 
 ```
-capture/        capture worker (Node, no npm dependencies)
+capture/        capture worker (Node; npm deps: defuddle + linkedom, the Obsidian Web Clipper's extractor)
   worker.js     Telegram bot (run by the LaunchAgent)
   add.js        capture from the terminal
   delete.js     delete a capture (inbox line + raw folder)

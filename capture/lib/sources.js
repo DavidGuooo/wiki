@@ -9,6 +9,8 @@ import {promisify} from 'node:util';
 import {config} from './config.js';
 import {cleanText, normalizeLink, urlHash} from './links.js';
 import {downloadAudio, duration, fetchBounded, mediaInfo, saveImage, transcribe} from './media.js';
+import {Defuddle} from 'defuddle/node';
+import {parseHTML} from 'linkedom';
 import {readItemImages} from './vision.js';
 
 const exec = promisify(execFile);
@@ -138,23 +140,16 @@ async function fromMedia(link, work, progress) {
     transcripts: [{label: info.hasVideo ? 'Video' : 'Audio', segments}]};
 }
 
+// Same extractor (and Markdown) as the Obsidian Web Clipper.
 async function fromWeb(link) {
   const {data, type, url} = await fetchBounded(link.url, {limit: 5 * 1024 * 1024});
   if (!/html|text\/plain/.test(type)) throw Error('This link is not a web page or supported media.');
-  const html = data.toString();
-  const meta = name => decode(html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]+content=["']([^"']*)`, 'i'))?.[1] || '');
-  const title = meta('og:title') || decode(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '').trim();
-  const body = html.match(/<article[\s\S]*?<\/article>/i)?.[0] || html.match(/<main[\s\S]*?<\/main>/i)?.[0] || html;
-  const text = decode(body.replace(/<(script|style|nav|header|footer|aside|noscript|svg|form)[\s\S]*?<\/\1>/gi, '')
-    .replace(/<\/(p|div|h\d|li|blockquote|pre|tr)>|<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ''))
-    .split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n\n');
-  if (!text && !title) throw Error('Could not read text from this page.');
-  return {platform: 'web', externalId: link.externalId, url: url || link.url, title, author: meta('author'),
-    parts: [{label: 'Page text', author: meta('author'), text: [meta('og:description') || meta('description'), text].filter(Boolean).join('\n\n').slice(0, 200000)}]};
-}
-
-function decode(s) {
-  const named = {amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' '};
-  return s.replace(/&(#x[\da-f]+|#\d+|\w+);/gi, (m, e) => e[0] === '#'
-    ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : named[e.toLowerCase()] ?? m);
+  if (!/html/.test(type)) return {platform: 'web', externalId: link.externalId, url: url || link.url, title: '', author: '',
+    parts: [{label: 'Page text', text: data.toString().trim().slice(0, 200000)}]};
+  const page = await Defuddle(parseHTML(data.toString()).document, url || link.url, {markdown: true});
+  const text = page.content?.trim();
+  if (!text && !page.title) throw Error('Could not read text from this page.');
+  return {platform: 'web', externalId: link.externalId, url: url || link.url, title: page.title, author: page.author,
+    published: /^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(page.published) ? page.published.slice(0, 16) : page.published,
+    parts: [{label: 'Page text', author: page.author, text: (text || page.description || '').slice(0, 200000)}]};
 }

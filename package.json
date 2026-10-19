@@ -10,5 +10,9 @@
     "add": "node capture/add.js",
     "setup-xhs": "capture/tools/setup-xhs.sh",
     "install-worker": "node capture/install.js"
+  },
+  "dependencies": {
+    "defuddle": "0.19.5",
+    "linkedom": "0.18.13"
   }
 }
