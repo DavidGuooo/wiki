@@ -4,13 +4,14 @@ A local personal knowledge system: plain Markdown in an Obsidian vault, captured
 
 - **Stream**: every link or screenshot you send is turned into text in `vault/raw/` (post text, image text, local transcript). Every capture is also added to `vault/inbox.md`, your watch-later list, as a checkbox line with its title.
 - **Topics**: `vault/topics/<name>/` holds a Claude-compiled wiki per topic (Karpathy-style), driven by that topic's `questions.md`. The current topics are agentic-coding, investing, product and jazz.
-- **Learning**: your own notes in `vault/notes/` and Anki cards. `vault/AGENTS.md` defines the agent workflows: **review**, **compile**, **lint** and **ask**. You write flashcards yourself.
+- **Learning**: your own notes in `vault/notes/` and Anki cards. `AGENTS.md` defines the agent workflows: **review**, **compile**, **lint** and **ask**. You write flashcards yourself.
 
 Transcription runs locally on the shared Qwen3-ASR runtime. Network calls: fetching the sources, Telegram, and one GPT-6-Luna call per post with images. That call classifies the post: when the images only carry text (a typical xiaohongshu text card), the text is stored verbatim and the images are dropped; otherwise only images that add information beyond the post (charts, diagrams, screenshots) are kept, without extracted text, and covers or decorative images are dropped. If GPT-6-Luna fails, the capture fails with ⚠️ and there is no fallback.
 
 ## Layout
 
 ```
+AGENTS.md       rules + workflows for agents, run from the repo root (CLAUDE.md just imports it)
 capture/        capture worker (Node; npm deps: defuddle + linkedom, the Obsidian Web Clipper's extractor)
   worker.js     Telegram bot (run by the LaunchAgent)
   add.js        capture from the terminal
@@ -21,7 +22,6 @@ capture/        capture worker (Node; npm deps: defuddle + linkedom, the Obsidia
   tests/
 .tools/         git-ignored third-party installs (pinned XHS-Downloader)
 vault/          symlink to the Obsidian vault in iCloud Drive (Documents/wiki), not tracked in git
-  AGENTS.md     rules + workflows for agents (CLAUDE.md just imports it)
   inbox.md      watch-later queue, newest first; tick the checkbox when done: it moves to the bottom and is deleted once it was captured 30+ days ago
   raw/<date>-<platform>-<id>/source.md + images/   machine-written, never hand-edited
   notes/<raw-id>.md, notes/daily/YYYY-MM-DD.md, notes/ideas.md   yours (ideas.md: excerpts and brief ideas)
@@ -46,7 +46,7 @@ A line is added to `inbox.md` only after a capture has fully finished. Progress 
 
 Captures never get topics automatically. Routing is your call: while going through the inbox, set the `topics` property on a source (or on one of your notes) in Obsidian, for example `topics: [product]`, even when the text never mentions the topic and only the underlying idea fits.
 
-Every night at 03:00, the Claude Code desktop routine **Compile topics** (sidebar → Scheduled) runs `node capture/compile.js plan` to see which topics' routed files changed since their last compile. It compiles each one following `vault/AGENTS.md`, writing only inside `topics/<t>/`, marks it compiled, and sends a Telegram summary. The changes are **not committed**, so review them with `git diff`. A failed topic is retried the next night. The routine runs while the desktop app is open; if the app was closed at 03:00, it runs on the next launch. Use **Run now** to compile immediately.
+Every night at 03:00, the Claude Code desktop routine **Compile topics** (sidebar → Scheduled) runs `node capture/compile.js plan` to see which topics' routed files changed since their last compile. It compiles each one following `AGENTS.md`, writing only inside `topics/<t>/`, marks it compiled, and sends a Telegram summary. The changes are **not committed**, so review them with `git diff`. A failed topic is retried the next night. The routine runs while the desktop app is open; if the app was closed at 03:00, it runs on the next launch. Use **Run now** to compile immediately.
 
 ```sh
 node capture/compile.js plan        # what the next compile will cover
