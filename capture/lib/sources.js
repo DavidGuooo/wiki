@@ -57,6 +57,8 @@ async function fromX(link, work) {
   const posts = [{label: 'Post', t: tweet, url: link.url}];
   if (tweet.quoted_tweet && /^\d+$/.test(tweet.quoted_tweet.id_str))
     posts.push({label: 'Quoted post', t: tweet.quoted_tweet, url: `https://x.com/i/web/status/${tweet.quoted_tweet.id_str}`});
+  // Syndication truncates long ("note") posts to ~280 characters; FxTwitter has the full text.
+  for (const p of posts) if (p.t.note_tweet) p.t.text = await noteText(p.t.id_str || link.externalId) || p.t.text;
 
   // Replace t.co links with their targets (article links are covered by the article part below).
   const expand = t => (Array.isArray(t.entities) ? t.entities : t.entities?.urls || [])
@@ -84,6 +86,15 @@ async function fromX(link, work) {
     item.transcripts.push({label: 'Video', segments: await transcribe(await downloadAudio(link.url, dir), dir)});
   }
   return item;
+}
+
+async function noteText(id) {
+  try {
+    const {data} = await fetchBounded(`https://api.fxtwitter.com/status/${id}`);
+    return JSON.parse(data.toString()).tweet?.text || '';
+  } catch {
+    return '';
+  }
 }
 
 async function fromXhs(link, work, progress) {
