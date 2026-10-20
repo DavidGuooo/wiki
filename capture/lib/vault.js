@@ -3,6 +3,7 @@ import {appendFile, cp, mkdir, readdir, readFile, rename, rm, writeFile} from 'n
 import {existsSync} from 'node:fs';
 import path from 'node:path';
 import {config} from './config.js';
+import {parseTopics} from './topics.js';
 
 const vault = (...p) => path.join(config.vault, ...p);
 export const localTime = (d = new Date()) => d.toLocaleString('sv-SE').slice(0, 16).replace(' ', 'T'); // 2026-10-11T17:30
@@ -71,11 +72,13 @@ const imageSection = (img, n) => ['', `### Image ${n}${img.source ? ` · ${img.s
 // Captured text is not yours: escape `#word` so Obsidian does not turn it into tags.
 export const noTags = (text = '') => text.replace(/(^|\s)#(?=[^\s#])/g, '$1\\#');
 
-// Platform · author · title.
+const topicSuffix = topics => topics?.length ? ` · topics: ${topics.map(linkSafe).join(', ')}` : '';
+
+// Platform · author · title, followed by topics when routed.
 export function inboxLine(meta, item) {
   const who = [PLATFORM_NAMES[item.platform] || item.platform, item.author].filter(Boolean).map(linkSafe).join(' · ');
   let line = `- [ ] ${who} · [[raw/${meta.id}/source|${linkSafe(item.title || fallbackTitle(item))}]]`;
-  return line + '\n';
+  return line + topicSuffix(meta.topics) + '\n';
 }
 
 // Posts without a title of their own (e.g. X) are named by the start of their text.
@@ -117,12 +120,16 @@ export async function sortInbox(now = new Date()) {
   if (text === null) return false;
   const {head, items} = inboxItems(text);
   const captured = {};
+  const topics = {};
   for (const id of items.map(itemId).filter(Boolean)) {
     const md = await readFile(vault('raw', id, 'source.md'), 'utf8').catch(() => '');
+    if (md) topics[id] = parseTopics(md);
     captured[id] = md.match(/^captured: (.*)$/m)?.[1] || '';
   }
   const old = line => captured[itemId(line)] && now - new Date(captured[itemId(line)]) >= 30 * 864e5;
-  const sorted = renderInbox(head, items.filter(line => !(isDone(line) && old(line))), captured);
+  const refreshed = items.map(line => topics[itemId(line)]
+    ? line.replace(/ · topics: .*$/, '') + topicSuffix(topics[itemId(line)]) : line);
+  const sorted = renderInbox(head, refreshed.filter(line => !(isDone(line) && old(line))), captured);
   if (sorted === text) return false;
   await writeFile(vault('inbox.md'), sorted);
   return true;

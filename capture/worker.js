@@ -82,8 +82,8 @@ log('capture worker started; vault', config.vault);
 // Checking a box in Obsidian moves that item to the bottom. Watch the folder (editors save by replacing files)
 // and wait until edits settle, so the file is never rewritten while you are typing.
 let resort;
-watch(config.vault, (event, file) => {
-  if (file !== 'inbox.md') return;
+watch(config.vault, {recursive: true}, (event, file) => {
+  if (file !== 'inbox.md' && !/^raw\/[^/]+\/source\.md$/.test(file || '')) return;
   clearTimeout(resort);
   resort = setTimeout(() => sortInbox().catch(e => log('inbox sort failed', e.message)), 3000);
 });

@@ -106,7 +106,7 @@ test('captured hashtags never become Obsidian tags', () => {
 });
 
 test('inbox line: platform · author · title', () => {
-  assert.equal(v.inboxLine(meta, item), '- [ ] xiaohongshu · 某人 · [[raw/2026-10-11-xiaohongshu-abc/source|AI 算力 三个误区]]\n');
+  assert.equal(v.inboxLine(meta, item), '- [ ] xiaohongshu · 某人 · [[raw/2026-10-11-xiaohongshu-abc/source|AI 算力 三个误区]] · topics: investing\n');
   const untitled = {platform: 'x', externalId: '9', title: '', parts: [{text: 'https://t.co/x  国内做出海的创业者真得学学 @boardyai 什么叫 AI Native 体验。就你们现在做的都是啥呀'}], images: [], transcripts: []};
   assert.equal(v.fallbackTitle(untitled), '国内做出海的创业者真得学学 @boardyai 什么叫 AI Native 体验…');
   assert.equal(v.fallbackTitle({...untitled, parts: []}), 'X 9');
@@ -137,6 +137,19 @@ test('publish, dedupe, notes', async () => {
   await v.addToInbox(line('c') + '\n');
   await v.addToInbox(line('b') + '\n');
   const read = () => readFile(path.join(tmp, 'inbox.md'), 'utf8');
+  assert.equal(await read(), `# Inbox\n\n${line('c')}\n${line('b')}\n${line('a')}\n`);
+  // Labels follow source routing, including Obsidian lists and removing all topics.
+  const bSource = path.join(tmp, 'raw', 'b', 'source.md');
+  const original = await readFile(bSource, 'utf8');
+  await writeFile(bSource, original.replace('id: b', 'id: b\ntopics: [investing, product]'));
+  await v.sortInbox();
+  assert.ok((await read()).includes(line('b') + ' · topics: investing, product\n'));
+  assert.equal(await v.sortInbox(), false);
+  await writeFile(bSource, original.replace('id: b', 'id: b\ntopics:\n  - product'));
+  await v.sortInbox();
+  assert.ok((await read()).includes(line('b') + ' · topics: product\n'));
+  await writeFile(bSource, original.replace('id: b', 'id: b\ntopics: []'));
+  await v.sortInbox();
   assert.equal(await read(), `# Inbox\n\n${line('c')}\n${line('b')}\n${line('a')}\n`);
   // tick c: it moves below the unchecked ones; untick it: back to its captured-time place
   await writeFile(path.join(tmp, 'inbox.md'), (await read()).replace('- [ ] X · [[raw/c', '- [x] X · [[raw/c'));
